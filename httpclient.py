@@ -40,8 +40,7 @@ class HTTPResponse(object):
 
 class HTTPClient(object):
     #def get_host_port(self,url):
-    # TODO: Review args for GET, (do they even work? Its not needed for the tests)
-    # but I have a feeling hindle would sneak something in
+    
 
     def connect(self, host, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -55,6 +54,7 @@ class HTTPClient(object):
         return int(data.split()[1])
 
     def get_headers(self,data):
+        # I am not using this function as I built the headers myself
         return None
 
     def get_body(self, data):
@@ -87,17 +87,24 @@ class HTTPClient(object):
         host = parsed.hostname
         port = parsed.port
         path = parsed.path
+        
+        # check scheme
+        self.check_scheme(parsed)
+ 
         # default port to 80 if port not found
         # default path to root if path not found
         if not port:
             port = 80
         if not path or path[-1] != "/":
             path += "/"
+        
+        if not host:
+            print(f"Host not found: {host}")
+            return
        
         # this is NOT needed for free-tests.py
-        # BUT, that being said, the function has an args
-        # parameter, so might as well add this       
-        if args:
+        # UPDATE: Hazel said in an eclass discussion that this is needed.       
+        if args is not None:
             # another portion of the request needs to be added to the path
             request_data = urllib.parse.urlencode(args)
             path = path + "?" + request_data
@@ -114,6 +121,10 @@ class HTTPClient(object):
         # After we send the request, wait for the server's response
         data = self.recvall(self.socket)
         # WE are done with the socket now, close it
+        
+        # print result to stdout
+        print(f"HTTP reponse: \n {data}")
+        
         self.close()
         # get the response code
         code = self.get_code(data)
@@ -127,6 +138,10 @@ class HTTPClient(object):
         host = parsed.hostname
         port = parsed.port
         path = parsed.path
+        
+        # scheck scheme
+        self.check_scheme(parsed)
+        
         # make port to 80 if port not found
         # default path to root if path not found
         if not port:
@@ -134,8 +149,12 @@ class HTTPClient(object):
         if not path or path[-1] != "/":
             path += "/"
         
+        if not host:
+            print(f"Host not found: {host}")
+            return
+        
         # POST arguments    
-        if args:
+        if args is not None:
             # encode the arguments if they exist
             request_data = urllib.parse.urlencode(args)
         else:
@@ -154,6 +173,10 @@ class HTTPClient(object):
         # After we send the request, wait for the server's response
         data = self.recvall(self.socket)
         # WE are done with the socket now, close it
+        
+        # print result to stdout
+        print(f"HTTP reponse: \n {data}")
+        
         self.close()
         # get the response code
         code = self.get_code(data)
@@ -167,6 +190,14 @@ class HTTPClient(object):
             return self.POST( url, args )
         else:
             return self.GET( url, args )
+    
+    def check_scheme(self, parsed):
+        scheme = parsed.scheme
+        scheme_list = ["http", "HTTP", "https", "HTTPS"]
+        if (scheme not in scheme_list):
+            print(f"{scheme} is not supported! Use HTTP.")
+            return
+    
     
 if __name__ == "__main__":
     client = HTTPClient()
